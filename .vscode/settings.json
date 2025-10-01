@@ -1,0 +1,10 @@
+{
+    "continue.models": [
+        {
+            "title": "Yuki LLM",
+            "provider": "ollama",
+            "model": "yuki-llm"
+        }
+    ],
+    "continue.enableTabAutocomplete": true
+}
