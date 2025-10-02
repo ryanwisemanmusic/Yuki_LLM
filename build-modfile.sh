@@ -28,6 +28,11 @@ EOF
 # Append your staging.md content
 cat Context/Docker/dockerfile-staging.md >> Modfile
 
+## MAKEFILE CONTEXT:
+- You have permission to touch Makefiles, but make sure to proceed with these rules:
+- Proven approach for platform detection for ARM64 platforms:
+cat Context/Makefile/platform-detect.md >> Modfile
+
 # Append the rest of the Modfile
 cat >> Modfile << 'EOF'
 
