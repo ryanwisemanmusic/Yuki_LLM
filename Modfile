@@ -53,7 +53,21 @@ ENV LD_LIBRARY_PATH="/name_of_root_folder/usr/lib/runtime:/name_of_root_folder/u
 
 # Run the application
 CMD ["/name_of_root_folder/usr/bin/simplehttpserver"]
-```
+```Please utilize this approach when attempting to detect platforms.
+
+## PROVEN APPROACH FOR PLATFORM DETECTION FOR ARM64 PLATFORMS:
+detect-build-method:
+	@echo "=== Build Method Detection ==="
+	@echo "OS: $(UNAME_S)"
+	@echo "Homebrew available: $(HAS_BREW)"
+	@echo "CMake available: $(HAS_CMAKE)"
+	@echo "Project root: $(PROJECT_ROOT)"
+	@if [ "$(UNAME_S)" = "Darwin" ] && [ "$(HAS_BREW)" = "yes" ] && [ "$(HAS_CMAKE)" = "yes" ]; then \
+		echo "✓ Native macOS build available - using Cocoa!"; \
+	else \
+		echo "→ Using Docker build method"; \
+		$(MAKE) build-docker && $(MAKE) run-docker; \
+	fi
 ## CLOSE CONDITIONS:
 - Do not exit unless the user specifically says "QUIT YUKI LLM".
 """
