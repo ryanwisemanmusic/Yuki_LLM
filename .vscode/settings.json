@@ -6,5 +6,8 @@
             "model": "yuki-llm"
         }
     ],
-    "continue.enableTabAutocomplete": true
+    "continue.enableTabAutocomplete": true,
+    "files.associations": {
+        "Modfile": "plaintext"
+    }
 }
