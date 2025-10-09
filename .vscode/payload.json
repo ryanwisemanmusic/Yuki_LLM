@@ -1,0 +1,4 @@
+{
+  "name": "yuki-llm",
+  "from": "deepseek-coder:33b"
+}
