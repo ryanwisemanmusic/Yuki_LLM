@@ -5,20 +5,20 @@ FROM deepseek-coder:33b
 SYSTEM """
 EOF
 
+
 # Add all General folder files
 cat Context/General/core-identity.md >> Modfile
-cat Context/General/introduction.md >> Modfile
-cat Context/General/substitutions.md >> Modfile
+#cat Context/General/introduction.md >> Modfile
+#cat Context/General/substitutions.md >> Modfile
 
 # Add all Docker folder files
-cat Context/Docker/mkdir_rules.md >> Modfile
-cat Context/Docker/successful-build-from-source-code.md >> Modfile
-cat Context/Docker/dockerfile-staging.md >> Modfile
+#cat Context/Docker/mkdir_rules.md >> Modfile
+#cat Context/Docker/dockerfile-staging.md >> Modfile
 
 # Add all Makefile folder files
-cat Context/Makefile/Docker-Gen-Rules.md >> Modfile
-cat Context/Makefile/Building-Docker-Containers-Via-Makefile.md >> Modfile
-cat Context/Makefile/platform-detect.md >> Modfile
+#cat Context/Makefile/Docker-Gen-Rules.md >> Modfile
+#cat Context/Makefile/Building-Docker-Containers-Via-Makefile.md >> Modfile
+#cat Context/Makefile/platform-detect.md >> Modfile
 
 cat >> Modfile << 'EOF'
 """
