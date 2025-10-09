@@ -18,8 +18,8 @@ services:
       - .:/workspace
     working_dir: /workspace
     environment:
-      - OLLAMA_KEEP_ALIVE=24h           # Keep models loaded for 24 hours
-      - OLLAMA_MAX_LOADED_MODELS=3      # Keep up to 3 models in memory
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_MAX_LOADED_MODELS=3
 
 volumes:
   webui-data:
