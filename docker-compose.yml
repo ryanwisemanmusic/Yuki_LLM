@@ -12,14 +12,35 @@ services:
 
   ollama:
     image: ollama/ollama
-    network_mode: "host"
+    network_mode: "host"             # host mode works fine for Ollama on macOS
     volumes:
       - ollama-data:/root/.ollama
       - .:/workspace
     working_dir: /workspace
     environment:
-      - OLLAMA_KEEP_ALIVE=24h
-      - OLLAMA_MAX_LOADED_MODELS=3
+      - OLLAMA_KEEP_ALIVE=-1
+      - OLLAMA_MAX_LOADED_MODELS=6
+
+  model-loader:
+    image: curlimages/curl:latest
+    depends_on:
+      - ollama
+    network_mode: "host"
+    entrypoint: >
+      sh -c '
+        echo "Waiting for Ollama API...";
+        until curl -sS --fail http://localhost:11434/; do
+          sleep 1;
+        done;
+        echo "Loading Phi model and keeping it alive indefinitely...";
+        curl -sS -X POST http://localhost:11434/api/generate \
+          -H "Content-Type: application/json" \
+          -d "{\"model\":\"phi\",\"prompt\":\"\",\"keep_alive\":\"-1\"}" \
+          || echo "Model load request failed";
+        echo "Phi model is now loaded and set to stay active indefinitely.";
+        sleep 5;
+      '
+    restart: "no"
 
 volumes:
   webui-data:
