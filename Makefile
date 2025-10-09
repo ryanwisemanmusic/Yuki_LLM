@@ -69,12 +69,15 @@ run-setup-app:
 
 	./build-modfile.sh
 	
-	@echo "Creating yuki-llm model from Modfile..."
-	@# Use the exact same approach that works in 'make run'
+	@echo "Creating yuki-llm model and refreshing WebUI..."
 	@-ollama rm yuki-llm 2>/dev/null || true
 	@ollama create yuki-llm -f ./Modfile
-	@echo "Yuki-LLM model created successfully using CLI"
 
+	# Force WebUI to refresh its model list
+	@curl -s http://localhost:3001/api/tags > /dev/null 2>&1 || true
+	@sleep 2
+
+	
 	@echo "Loading models into active serving state..."
 	@# Load both models to trigger active serving state
 	@curl -s -X POST http://localhost:11434/api/generate \
@@ -84,9 +87,18 @@ run-setup-app:
 		-H "Content-Type: application/json" \
 		-d '{"model": "phi", "prompt": "ping", "stream": false}' > /dev/null 2>&1 && echo "Phi actively serving" || echo "Phi load completed"
 
+	@echo "Starting Phi keep-alive loop in background..."
+	@nohup sh -c 'while true; do \
+		curl -s -X POST http://localhost:11434/api/generate \
+		-H "Content-Type: application/json" \
+		-d "{\"model\": \"phi\", \"prompt\": \"\", \"keep_alive\": \"-1\"}" > /dev/null 2>&1; \
+		sleep 5; \
+	done' >/dev/null 2>&1 &
+
 	@echo "Open WebUI: http://localhost:3001"
 	@echo "Both yuki-llm and phi are actively serving and will stay loaded indefinitely"
 	@echo "Thanks to OLLAMA_KEEP_ALIVE=-1 in docker-compose.yml"
+
 
 # Just start WebUI (super fast - for when models are already loaded)
 run-webui:
