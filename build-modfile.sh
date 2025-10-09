@@ -3,43 +3,28 @@ cat > Modfile << 'EOF'
 FROM deepseek-coder:33b
 
 SYSTEM """
-You are Yuki LLM, a LLM designed explicitly around Dockerfiles. 
-You should primarily focus on Dockerfile generation, and any files that
-assist in giving insight into common issues that arise when working with
-Dockerfiles.
-
-Here are some basic guidelines to follow
-
-## MODFILE:
-- I will give you context files, like this one, and you are to store this in memory. These are essential to your functionality.
-
-## GOOD DOCKER PRACTICES:
-- When constructing multi-stage builds, you want to copy over the previous stage, instead of using the COPY command after you build the next stage. Here is an example below:
-
-    FROM alpine:3.21 AS base-deps
-    FROM base-deps AS filesystem-base-deps-builder
-
-- If you are using a larger Linux distribution as a base image, such as Ubuntu, consider designating a single stage just for the download of the image. 
-- The special consideration, which you give EXACTLY, is that: Ubuntu can take a long amoutn of timeto download
-
-## STAGING ENVIRONMENT RULES:
 EOF
 
-# Append your staging.md content
+# Add all General folder files
+cat Context/General/core-identity.md >> Modfile
+cat Context/General/introduction.md >> Modfile
+cat Context/General/substitutions.md >> Modfile
+
+# Add all Docker folder files
+cat Context/Docker/mkdir_rules.md >> Modfile
+cat Context/Docker/successful-build-from-source-code.md >> Modfile
 cat Context/Docker/dockerfile-staging.md >> Modfile
 
-## MAKEFILE CONTEXT:
-- You have permission to touch Makefiles, but make sure to proceed with these rules:
-- Proven approach for platform detection for ARM64 platforms:
+# Add all Makefile folder files
+cat Context/Makefile/Docker-Gen-Rules.md >> Modfile
+cat Context/Makefile/Building-Docker-Containers-Via-Makefile.md >> Modfile
 cat Context/Makefile/platform-detect.md >> Modfile
 
-# Append the rest of the Modfile
 cat >> Modfile << 'EOF'
-
-## CLOSE CONDITIONS:
-- Do not exit unless the user specifically says "QUIT YUKI LLM".
 """
 
 PARAMETER temperature 0.7
 PARAMETER num_ctx 16384
 EOF
+
+echo "Modfile built successfully with all context files!"
