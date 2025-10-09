@@ -35,7 +35,7 @@ test-docker: modfile
 	@echo "Test Run"
 	ollama run yuki-llm "Generate me the code needed for building JACK2 from source." | tee $(TEST_LOG)
 
-PHONY: run-setup-app run-webui stop-webui
+.PHONY: run-setup-app run-webui stop-webui
 
 # Configuration
 MODEL_NAME := deepseek-coder:33b
@@ -43,52 +43,50 @@ CUSTOM_MODEL_NAME := yuki-llm
 MODFILE := ./Modfile
 
 # Fast WebUI setup - assumes models are already created via your existing workflow
-.PHONY: run-setup-app run-webui-with-model
+.PHONY: clean-run-setup-app run-setup-app run-webui-with-model
+
+clean-run-setup-app: 
+	@echo "==CLEANING PREVIOUS RUN DATA=="
+	@docker-compose down 2>/dev/null || true
+	@rm -f /tmp/yuki-pull-response.json
+	@rm -f /tmp/yuki-create-response.json
+	@rm -rf .vscode/payload.json
+	@echo "Starting fresh run-setup-app..."
+	@$(MAKE) run-setup-app
 
 run-setup-app:
-	@echo "==STARTING SERVICES WITH CONTINUOUS KEEP-ALIVE=="
+	@echo "==STARTING SERVICES WITH INDEFINITE KEEP-ALIVE=="
 	docker-compose down 2>/dev/null || true
 	docker-compose up -d
 	@echo "Waiting for services to start..."
 	sleep 15
 
-	# PULL THE BASE MODEL FIRST (no jq)
+	# PULL THE BASE MODEL FIRST
 	@echo "Pulling base model $(MODEL_NAME)..."
 	@curl -s -X POST http://localhost:11434/api/pull \
 		-H "Content-Type: application/json" \
 		--data-raw '{"name":"'"$(MODEL_NAME)"'"}' | tee /tmp/yuki-pull-response.json
 
 	./build-modfile.sh
+	
+	@echo "Creating yuki-llm model from Modfile..."
+	@# Use the exact same approach that works in 'make run'
+	@-ollama rm yuki-llm 2>/dev/null || true
+	@ollama create yuki-llm -f ./Modfile
+	@echo "Yuki-LLM model created successfully using CLI"
 
-	@echo "Creating yuki-llm model from .vscode/payload.json..."
-	@if [ -f .vscode/payload.json ]; then \
-		curl -s -X POST http://localhost:11434/api/create \
-			-H "Content-Type: application/json" \
-			--data-binary @.vscode/payload.json | tee /tmp/yuki-create-response.json; \
-	else \
-		echo "ERROR: .vscode/payload.json not found. Create it with Option B JSON and retry."; \
-		exit 1; \
-	fi
-
-	@# Show a short helpful summary if there was an error
-	@grep -q '"error"' /tmp/yuki-create-response.json >/dev/null 2>&1 && ( \
-		echo "Create failed — see /tmp/yuki-create-response.json"; \
-		echo "Payload file: .vscode/payload.json"; \
-		false \
-	) || echo "Create succeeded"
-
-	@echo "Starting indefinite model keep-alive service..."
-	@nohup sh -c 'while true; do \
-		curl -s -X POST http://localhost:11434/api/generate \
-			-d "{\"model\": \"yuki-llm\", \"prompt\": \".\", \"stream\": false}" > /dev/null 2>&1; \
-		sleep 60; \
-	done' >/dev/null 2>&1 &
+	@echo "Loading models into active serving state..."
+	@# Load both models to trigger active serving state
+	@curl -s -X POST http://localhost:11434/api/generate \
+		-H "Content-Type: application/json" \
+		-d '{"model": "yuki-llm", "prompt": "ping", "stream": false}' > /dev/null 2>&1 && echo "Yuki-LLM actively serving" || echo "Yuki-LLM load completed"
+	@curl -s -X POST http://localhost:11434/api/generate \
+		-H "Content-Type: application/json" \
+		-d '{"model": "phi", "prompt": "ping", "stream": false}' > /dev/null 2>&1 && echo "Phi actively serving" || echo "Phi load completed"
 
 	@echo "Open WebUI: http://localhost:3001"
-	@echo "To stop keep-alive: pkill -f \"curl.*api/generate\""
-
-
-
+	@echo "Both yuki-llm and phi are actively serving and will stay loaded indefinitely"
+	@echo "Thanks to OLLAMA_KEEP_ALIVE=-1 in docker-compose.yml"
 
 # Just start WebUI (super fast - for when models are already loaded)
 run-webui:
@@ -121,6 +119,7 @@ clean-docker:
 # Clean Ollama models
 clean-models:
 	@echo "CLEANING OLLAMA MODELS"
+	-pkill -f "curl.*api/chat" 2>/dev/null || true
 	-pkill -f "curl.*api/generate" 2>/dev/null || true
 	-curl -s -X DELETE http://localhost:11434/api/delete -d '{"name": "yuki-llm"}' > /dev/null 2>&1 || true
 	-curl -s -X DELETE http://localhost:11434/api/delete -d '{"name": "phi"}' > /dev/null 2>&1 || true
